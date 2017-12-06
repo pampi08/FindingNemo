@@ -22,7 +22,7 @@ function varargout = finding_nemo(varargin)
 
 % Edit the above text to modify the response to help finding_nemo
 
-% Last Modified by GUIDE v2.5 02-Dec-2017 01:45:03
+% Last Modified by GUIDE v2.5 06-Dec-2017 18:37:50
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -53,6 +53,9 @@ function finding_nemo_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to finding_nemo (see VARARGIN)
 
 % Choose default command line output for finding_nemo
+load mri
+handles.D=squeeze(D);
+
 handles.output = hObject;
 initialConditions(hObject, handles);
 handles = guidata(hObject);
@@ -94,14 +97,12 @@ varargout{1} = handles.output;
 function DDDgraph(hObject, handles) %FUNÇÃO PARA MOSTRAR AS SLICES 3D
 %Lê os dados correspondentes a 27 slides de imagens de MRI com uma resolução
 %de 128*128. Esses dados ficam disponíveis na matriz D.
-load mri
-D=squeeze(D);
 %matriz convertida para o formato double
 axes(handles.axes4);
 colormap('gray');
 %representação do slide em x=50, y=50 e z=10;
 %nota: foi necessário converter a matriz D para double.
-h=slice(double(D)/255, handles.Mslice,handles.Nslice,handles.Pslice); 
+h=slice(double(handles.D)/255, handles.Mslice,handles.Nslice,handles.Pslice); 
 %os sliders em baixo dos tres axes definem a slice, é suposto ela ser
 %mostrada no gráfico 2D correspondente e no 3D
 %angulo de visualização do volume
@@ -114,24 +115,24 @@ grid off;
 %FUNÇÕES PARA MOSTRAR CADA UMA DAS SLICES EM CADA DIREÇÃO (MxNxP)
 %ERRO: SO TA A MOSTRAR SLICES P
 function Mgraph(hObject, handles) 
-load mri
-D=squeeze(D(handles.Mslice, :, :));
+handles.D=squeeze(handles.D(handles.Mslice, :, :));
+
 axes(handles.axes1);
-imshow(imresize(D, [300 300], 'nearest'), []);
+imshow(imresize(handles.D, [300 300], 'nearest'), []);
 colormap('gray');
 
 function Ngraph(hObject, handles)
-load mri
-D=squeeze(D(:, handles.Nslice, :));
+handles.D=squeeze(handles.D(:, handles.Nslice, :));
+
 axes(handles.axes2);
-imshow(imresize(D, [300 300], 'nearest'), []);
+imshow(imresize(handles.D, [300 300], 'nearest'), []);
 colormap('gray');
 
 function Pgraph(hObject, handles)
-load mri
-D=squeeze(D(:,:,handles.Pslice));
+handles.D=squeeze(handles.D(:,:,handles.Pslice));
+
 axes(handles.axes3);
-imshow(imresize(D, [300 300], 'nearest'), []);
+imshow(imresize(handles.D, [300 300], 'nearest'), []);
 colormap('gray');
         
 
@@ -142,24 +143,25 @@ sliderGamma = get(handles.sliderGamma, 'Value');
 
 %AJUSTE BRILHO
 if sliderBright>=0
-   img2 = imadjust(img,[0;1-sliderBright],[sliderBright;1]); %para aummentar brilho
+   handles.D = imadjustn(handles.D,[0;1-sliderBright],[sliderBright;1]); %para aummentar brilho
 else
-   img2 = imadjust(img,[-sliderBright;1],[0;1+sliderBright]);
+   handles.D = imadjustn(handles.D,[-sliderBright;1],[0;1+sliderBright]);
 end
 
 %AJUSTE CONTRASTE
 if sliderContrast>=0
-   img2 = imadjust(img2,[sliderContrast;1-sliderContrast],[0;1]); %para aummentar contraste
+   handles.D = imadjustn(handles.D,[sliderContrast;1-sliderContrast],[0;1]); %para aummentar contraste
 else
-   img2 = imadjust(img2,[0;1],[-sliderContrast;1+sliderContrast]);
+   handles.D = imadjustn(handles.D,[0;1],[-sliderContrast;1+sliderContrast]);
 end
 %AJUSTE GAMMA
-img2 = imadjust(img2,[],[],sliderGamma); 
+handles.D = imadjustn(handles.D,[],[],sliderGamma); 
 
-handles.img2save = img2; %Após o ajuste, criamos uma nova imagem para que possa ser guardada
+DDDgraph(hObject, handles);
 
-axes(handles.axes1);
-imshow(img2);
+Mgraph(hObject, handles);
+Ngraph(hObject, handles);
+Pgraph(hObject, handles);
 
 guidata(hObject, handles);
 
@@ -168,8 +170,10 @@ function sliderX_Callback(hObject, eventdata, handles)
 handles.Xangle = get(hObject, 'Value');
 textX = strcat('Horizontal: ', num2str(round(handles.Xangle)),'º');
 set(handles.textX, 'String', textX);
+
+my_adjust(hObject, handles);
+
 guidata(hObject, handles);
-DDDgraph(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
 function sliderX_CreateFcn(hObject, eventdata, handles)
@@ -187,8 +191,10 @@ function sliderZ_Callback(hObject, eventdata, handles)
 handles.Zangle = get(hObject, 'Value');
 textZ = strcat('Vertical: ', num2str(round(handles.Zangle)),'º');
 set(handles.textZ, 'String', textZ);
+
+my_adjust(hObject, handles);
+
 guidata(hObject, handles);
-DDDgraph(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
 function sliderZ_CreateFcn(hObject, eventdata, handles)
@@ -207,9 +213,10 @@ function sliderM_Callback(hObject, eventdata, handles)
 handles.Mslice = round(get(hObject, 'Value'));
 textM = strcat('Longitudinal Slice: ', num2str(handles.Mslice));
 set(handles.textM, 'String', textM);
+
+my_adjust(hObject, handles);
+
 guidata(hObject, handles);
-Mgraph(hObject, handles);
-DDDgraph(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -229,9 +236,10 @@ function sliderN_Callback(hObject, eventdata, handles)
 handles.Nslice = round(get(hObject, 'Value'));
 textN = strcat('Sagital Slice: ', num2str(handles.Nslice));
 set(handles.textN, 'String', textN);
+
+my_adjust(hObject, handles);
+
 guidata(hObject, handles);
-Ngraph(hObject, handles);
-DDDgraph(hObject, handles);
 
 
 
@@ -252,9 +260,10 @@ function sliderP_Callback(hObject, eventdata, handles)
 handles.Pslice = round(get(hObject, 'Value'));
 textP = strcat('Transversal Slice: ', num2str(handles.Pslice));
 set(handles.textP, 'String', textP);
+
+my_adjust(hObject, handles);
+
 guidata(hObject, handles);
-Pgraph(hObject, handles);
-DDDgraph(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -271,9 +280,9 @@ end
 
 % --- Executes on slider movement.
 function sliderBright_Callback(hObject, eventdata, handles)
-% hObject    handle to sliderBright (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+my_adjust(hObject, handles);
+
+guidata(hObject, handles);
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
@@ -293,9 +302,9 @@ end
 
 % --- Executes on slider movement.
 function sliderContr_Callback(hObject, eventdata, handles)
-% hObject    handle to sliderContr (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+my_adjust(hObject, handles);
+
+guidata(hObject, handles);
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
@@ -315,10 +324,9 @@ end
 
 % --- Executes on slider movement.
 function sliderGamma_Callback(hObject, eventdata, handles)
-% hObject    handle to sliderGamma (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+my_adjust(hObject, handles);
 
+guidata(hObject, handles);
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
@@ -333,3 +341,12 @@ function sliderGamma_CreateFcn(hObject, eventdata, handles)
 if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
+
+
+% --- Executes during object creation, after setting all properties.
+function axes1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to axes1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: place code in OpeningFcn to populate axes1
