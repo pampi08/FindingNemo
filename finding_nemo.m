@@ -22,7 +22,7 @@ function varargout = finding_nemo(varargin)
 
 % Edit the above text to modify the response to help finding_nemo
 
-% Last Modified by GUIDE v2.5 09-Dec-2017 20:26:45
+% Last Modified by GUIDE v2.5 12-Dec-2017 19:13:42
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -102,8 +102,7 @@ colormap('gray');
 
 %nota: foi necessário converter a matriz D para double.
 h=slice(double(handles.D)/255, handles.Mslice,handles.Nslice,handles.Pslice); 
-%os sliders em baixo dos tres axes definem a slice, é suposto ela ser
-%mostrada no gráfico 2D correspondente e no 3D
+%os sliders em baixo dos tres axes definem a slice
 axis tight%angulo de visualização do volume
 view(handles.Xangle,handles.Zangle); 
  %sem representação do voxel e com interpolação dos slides
@@ -116,19 +115,25 @@ grid off;
 function Mgraph(hObject, handles) 
 handles.D=squeeze(handles.D(handles.Mslice, :, :));
 axes(handles.axes1);
-imshow(imresize(imrotate(handles.D, 90, 'bicubic'), [300 300], 'cubic'), []);
+h = imshow(imresize(imrotate(handles.D, 90, 'bicubic'), [300 300], 'cubic'));
+set(h,'ButtonDownFcn',{@axes1_ButtonDownFcn});
+
 colormap('gray');
 
 function Ngraph(hObject, handles)
 handles.D=squeeze(handles.D(:, handles.Nslice, :));
 axes(handles.axes2);
-imshow(imresize(imrotate(handles.D, 90, 'bicubic'), [300 300], 'cubic'), []);
+h = imshow(imresize(imrotate(handles.D, 90, 'bicubic'), [300 300], 'cubic'));
+set(h,'ButtonDownFcn',{@axes2_ButtonDownFcn});
+
 colormap('gray');
 
 function Pgraph(hObject, handles)
 handles.D=squeeze(handles.D(:,:,handles.Pslice));
 axes(handles.axes3);
-imshow(imresize(handles.D, [300 300], 'nearest'), []);
+h = imshow(imresize(handles.D, [300 300], 'nearest'));
+set(h,'ButtonDownFcn',{@axes3_ButtonDownFcn});
+
 colormap('gray');
         
 
@@ -278,7 +283,9 @@ function sliderBright_Callback(hObject, eventdata, handles)
 handles.sliderB = get(hObject, 'Value');
 textB = strcat('Brightness: ', num2str(round(handles.sliderB*100)));
 set(handles.textBright, 'String', textB);
+
 my_adjust(hObject, handles);
+
 guidata(hObject, handles);
 
 % Hints: get(hObject,'Value') returns position of slider
@@ -302,7 +309,9 @@ function sliderContr_Callback(hObject, eventdata, handles)
 handles.sliderC = get(hObject, 'Value');
 textC = strcat('Contrast: ', num2str(round(handles.sliderC*100)));
 set(handles.textContr, 'String', textC);
+
 my_adjust(hObject, handles);
+
 guidata(hObject, handles);
 
 % Hints: get(hObject,'Value') returns position of slider
@@ -326,7 +335,9 @@ function sliderGamma_Callback(hObject, eventdata, handles)
 handles.sliderG = get(hObject, 'Value');
 textG = strcat('Gamma: ', num2str(handles.sliderG, 3));
 set(handles.textGamma, 'String', textG);
+
 my_adjust(hObject, handles);
+
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -355,8 +366,15 @@ function laplacianButton_Callback(hObject, eventdata, handles)
 axes(handles.axes4);
 colormap('gray');
 axis tight
-contourslice(handles.D,handles.Mslice,handles.Nslice,handles.Pslice,4);
+handles.D = contourslice(handles.D,handles.Mslice,handles.Nslice,handles.Pslice);
+
+% Mgraph(hObject, handles);
+% Ngraph(hObject, handles);
+% Pgraph(hObject, handles);
+
 view(handles.Xangle,handles.Zangle); 
+
+guidata(hObject, handles);
  
 
 
@@ -373,6 +391,13 @@ view(handles.Xangle,handles.Zangle);
 %     [X, Y, Z] = meshgrid(1 : N, 1 : M, 1 : P) where [M, N, P] = SIZE(V).
 %  
 function create_NEMO(hObject, handles)
+%clear all;
+%por o nemo dentro do cerebro
+nemo1 = [];
+nemo2 = [];
+nemo3 = [];
+nemo4 = [];
+
 nemo=imread('nemo','jpg');     
 nemo1=255-imresize(nemo, [30 30], 'cubic');
 nemo2=255-imresize(nemo, [25 25], 'cubic');
@@ -388,10 +413,12 @@ handles.nemo(6:25,6:25,6) = nemo3;
 handles.nemo(11:20,11:20,7) = nemo4;
 guidata(hObject,handles);
 my_adjust(hObject, handles);
+
  
 
 % --- Executes on button press in hideButton.
 function hideButton_Callback(hObject, eventdata, handles)
+
 create_NEMO(hObject, handles);
 handles=guidata(hObject);
 [M,N,P] = size(handles.D);
@@ -401,3 +428,44 @@ positionZ = round(3+(P-3).*rand(1,1));
 handles.D(positionX:positionX+29,positionY:positionY+29,positionZ-3:positionZ+3)=double(handles.D(positionX:positionX+29,positionY:positionY+29,positionZ-3:positionZ+3)) + handles.nemo(:,:,:);
 guidata(hObject, handles);
 my_adjust(hObject, handles);
+
+%https://www.mathworks.com/help/matlab/creating_plots/button-down-callback-function.html#buhztrs-16
+
+
+
+% --- Executes on button press in pushbutton3.
+function pushbutton3_Callback(hObject, eventdata, handles)
+msgbox('Instructions:');
+% hObject    handle to pushbutton3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on mouse press over axes background.
+function axes4_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to axes4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on mouse press over axes background.
+function axes1_ButtonDownFcn(hObject, eventdata, handles)
+disp('Coordinates');
+axesHandles  = get(hObject,'Parent');
+coordinate = get(axesHandles,'CurrentPoint');
+disp(coordinate);
+
+% --- Executes on mouse press over axes background.
+function axes2_ButtonDownFcn(hObject, eventdata, handles)
+disp('Coordinates');
+axesHandles  = get(hObject,'Parent');
+coordinate = get(axesHandles,'CurrentPoint');
+disp(coordinate);
+
+
+% --- Executes on mouse press over axes background.
+function axes3_ButtonDownFcn(hObject, eventdata, handles)
+disp('Coordinates');
+axesHandles  = get(hObject,'Parent');
+coordinate = get(axesHandles,'CurrentPoint');
+disp(coordinate);
