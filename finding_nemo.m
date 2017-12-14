@@ -22,7 +22,7 @@ function varargout = finding_nemo(varargin)
 
 % Edit the above text to modify the response to help finding_nemo
 
-% Last Modified by GUIDE v2.5 12-Dec-2017 19:13:42
+% Last Modified by GUIDE v2.5 14-Dec-2017 16:04:01
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -81,6 +81,9 @@ handles.Zangle = 30;
 handles.sliderB = 0;
 handles.sliderC = 0;
 handles.sliderG = 1;
+handles.laplacianON=false;
+handles.maxD=88;
+handles.level=2;
 guidata(hObject, handles);
 
 % --- Outputs from this function are returned to the command line.
@@ -115,25 +118,23 @@ grid off;
 function Mgraph(hObject, handles) 
 handles.D=squeeze(handles.D(handles.Mslice, :, :));
 axes(handles.axes1);
-h = imshow(imresize(imrotate(handles.D, 90, 'bicubic'), [300 300], 'cubic'));
+h = imshow(imresize(imrotate(handles.D, 90, 'bicubic'), [300 300], 'cubic'), [0 handles.maxD]);
 set(h,'ButtonDownFcn',{@axes1_ButtonDownFcn});
-
 colormap('gray');
+
 
 function Ngraph(hObject, handles)
 handles.D=squeeze(handles.D(:, handles.Nslice, :));
 axes(handles.axes2);
-h = imshow(imresize(imrotate(handles.D, 90, 'bicubic'), [300 300], 'cubic'));
+h = imshow(imresize(imrotate(handles.D, 90, 'bicubic'), [300 300], 'cubic'), [0 handles.maxD]);
 set(h,'ButtonDownFcn',{@axes2_ButtonDownFcn});
-
 colormap('gray');
 
 function Pgraph(hObject, handles)
 handles.D=squeeze(handles.D(:,:,handles.Pslice));
 axes(handles.axes3);
-h = imshow(imresize(handles.D, [300 300], 'nearest'));
+h = imshow(imresize(handles.D, [300 300], 'nearest'), [0 handles.maxD]);
 set(h,'ButtonDownFcn',{@axes3_ButtonDownFcn});
-
 colormap('gray');
         
 
@@ -163,6 +164,14 @@ Mgraph(hObject, handles);
 Ngraph(hObject, handles);
 Pgraph(hObject, handles);
 handles = guidata(hObject);
+if handles.laplacianON == true
+    handles=guidata(hObject);
+    axes(handles.axes4);
+    colormap('gray');
+    axis tight
+    contourslice(handles.D,handles.Mslice,handles.Nslice,handles.Pslice);
+    view(handles.Xangle,handles.Zangle);
+end
 guidata(hObject, handles);
 
 % --- Executes on slider movement.
@@ -363,18 +372,9 @@ function axes1_CreateFcn(hObject, eventdata, handles)
 
 % --- Executes on button press in laplacianButton.
 function laplacianButton_Callback(hObject, eventdata, handles)
-axes(handles.axes4);
-colormap('gray');
-axis tight
-handles.D = contourslice(handles.D,handles.Mslice,handles.Nslice,handles.Pslice);
-
-% Mgraph(hObject, handles);
-% Ngraph(hObject, handles);
-% Pgraph(hObject, handles);
-
-view(handles.Xangle,handles.Zangle); 
-
+handles.laplacianON=true;
 guidata(hObject, handles);
+my_adjust(hObject, handles);
  
 
 
@@ -417,15 +417,28 @@ my_adjust(hObject, handles);
  
 
 % --- Executes on button press in hideButton.
-function hideButton_Callback(hObject, eventdata, handles)
-
+function hideNEMO(hObject, handles)
+%AS VEZES DA ERRO, É PRECISO DEFINIR MELHOR A POSIÇÃO
 create_NEMO(hObject, handles);
 handles=guidata(hObject);
 [M,N,P] = size(handles.D);
 positionX = round((M-30).*rand(1,1));
 positionY = round((N-30).*rand(1,1));
 positionZ = round(3+(P-3).*rand(1,1));
-handles.D(positionX:positionX+29,positionY:positionY+29,positionZ-3:positionZ+3)=double(handles.D(positionX:positionX+29,positionY:positionY+29,positionZ-3:positionZ+3)) + handles.nemo(:,:,:);
+switch handles.level
+    case 1
+        nemoCte = 1;
+    case 2
+        nemoCte = 0.5;
+    case 3
+        nemoCte = 0.3;
+    case 4
+        nemoCte = 0.1;
+    case 5
+        nemoCte = 0.05;
+end
+handles.D(positionX:positionX+29,positionY:positionY+29,positionZ-3:positionZ+3)=double(handles.D(positionX:positionX+29,positionY:positionY+29,positionZ-3:positionZ+3)) + nemoCte*handles.nemo(:,:,:);
+handles.maxD=max(max(max(handles.D)));
 guidata(hObject, handles);
 my_adjust(hObject, handles);
 
@@ -469,3 +482,14 @@ disp('Coordinates');
 axesHandles  = get(hObject,'Parent');
 coordinate = get(axesHandles,'CurrentPoint');
 disp(coordinate);
+
+
+% --- Executes on button press in playButton.
+function playButton_Callback(hObject, eventdata, handles)
+hideNEMO(hObject, handles);
+handles=guidata(hObject);
+
+%DUVIDAS:
+%COMO INTERPRETAR AS COORDENADAS DO CLIQUE
+%COMO METER O NEMO SO NA CABEÇA
+
