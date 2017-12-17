@@ -22,7 +22,7 @@ function varargout = finding_nemo(varargin)
 
 % Edit the above text to modify the response to help finding_nemo
 
-% Last Modified by GUIDE v2.5 14-Dec-2017 16:04:01
+% Last Modified by GUIDE v2.5 17-Dec-2017 14:20:41
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -68,9 +68,9 @@ function initialConditions(hObject, handles)
 set(handles.sliderGamma,'Value', 1, 'Min', 0.3, 'Max', 3);
 set(handles.sliderContr, 'Value', 0);
 set(handles.sliderBright, 'Value', 0);
-set(handles.sliderM,'Value', 50, 'Min', 0, 'Max', 128);
-set(handles.sliderN,'Value', 50, 'Min', 0, 'Max', 128);
-set(handles.sliderP,'Value', 10, 'Min', 0, 'Max', 27);
+set(handles.sliderM,'Value', 50, 'Min', 1, 'Max', 128);
+set(handles.sliderN,'Value', 50, 'Min', 1, 'Max', 128);
+set(handles.sliderP,'Value', 10, 'Min', 1, 'Max', 27);
 set(handles.sliderX,'Value', 35, 'Min', -180, 'Max', 180);
 set(handles.sliderZ,'Value', 30, 'Min', -90, 'Max', 90);
 handles.Mslice = 50;
@@ -101,10 +101,11 @@ function DDDgraph(hObject, handles) %FUNÇÃO PARA MOSTRAR AS SLICES 3D
 %de 128*128. Esses dados ficam disponíveis na matriz D.
 %matriz convertida para o formato double
 axes(handles.axes4);
+cla
 colormap('gray');
 
 %nota: foi necessário converter a matriz D para double.
-h=slice(double(handles.D)/255, handles.Mslice,handles.Nslice,handles.Pslice); 
+h=slice(double(handles.D)/255,handles.Nslice,handles.Mslice,handles.Pslice); 
 %os sliders em baixo dos tres axes definem a slice
 axis tight%angulo de visualização do volume
 view(handles.Xangle,handles.Zangle); 
@@ -179,10 +180,10 @@ function sliderX_Callback(hObject, eventdata, handles)
 handles.Xangle = get(hObject, 'Value');
 textX = strcat('Horizontal: ', num2str(round(handles.Xangle)),'º');
 set(handles.textX, 'String', textX);
-
+guidata(hObject, handles);
 my_adjust(hObject, handles);
 
-guidata(hObject, handles);
+
 
 % --- Executes during object creation, after setting all properties.
 function sliderX_CreateFcn(hObject, eventdata, handles)
@@ -200,10 +201,10 @@ function sliderZ_Callback(hObject, eventdata, handles)
 handles.Zangle = get(hObject, 'Value');
 textZ = strcat('Vertical: ', num2str(round(handles.Zangle)),'º');
 set(handles.textZ, 'String', textZ);
-
+guidata(hObject, handles);
 my_adjust(hObject, handles);
 
-guidata(hObject, handles);
+
 
 % --- Executes during object creation, after setting all properties.
 function sliderZ_CreateFcn(hObject, eventdata, handles)
@@ -222,10 +223,10 @@ function sliderM_Callback(hObject, eventdata, handles)
 handles.Mslice = round(get(hObject, 'Value'));
 textM = strcat('Longitudinal Slice: ', num2str(handles.Mslice));
 set(handles.textM, 'String', textM);
-
+guidata(hObject, handles);
 my_adjust(hObject, handles);
 
-guidata(hObject, handles);
+
 
 
 % --- Executes during object creation, after setting all properties.
@@ -245,10 +246,10 @@ function sliderN_Callback(hObject, eventdata, handles)
 handles.Nslice = round(get(hObject, 'Value'));
 textN = strcat('Sagital Slice: ', num2str(handles.Nslice));
 set(handles.textN, 'String', textN);
-
+guidata(hObject, handles);
 my_adjust(hObject, handles);
 
-guidata(hObject, handles);
+
 
 
 
@@ -269,11 +270,8 @@ function sliderP_Callback(hObject, eventdata, handles)
 handles.Pslice = round(get(hObject, 'Value'));
 textP = strcat('Transversal Slice: ', num2str(handles.Pslice));
 set(handles.textP, 'String', textP);
-
-my_adjust(hObject, handles);
-
 guidata(hObject, handles);
-
+my_adjust(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
 function sliderP_CreateFcn(hObject, eventdata, handles)
@@ -421,29 +419,61 @@ function hideNEMO(hObject, handles)
 %AS VEZES DA ERRO, É PRECISO DEFINIR MELHOR A POSIÇÃO
 create_NEMO(hObject, handles);
 handles=guidata(hObject);
-[M,N,P] = size(handles.D);
-positionX = round((M-30).*rand(1,1));
-positionY = round((N-30).*rand(1,1));
-positionZ = round(3+(P-3).*rand(1,1));
+positionX = round(22+(97-22).*rand(1,1));
+positionY = round(26+(80-26).*rand(1,1));
+positionZ = round(1+(20-1).*rand(1,1));
+disp(positionX)
+disp(positionY)
+disp(positionZ)
+% A + (B-A)*rand(1,1)
+%PLANO M: [22, 120]
+%PLANO N: [26, 100]
+%PLANO Z: [0, 25]
 switch handles.level
     case 1
-        nemoCte = 1;
-    case 2
-        nemoCte = 0.5;
-    case 3
         nemoCte = 0.3;
+    case 2
+        nemoCte = 0.25;
+    case 3
+        nemoCte = 0.15;
     case 4
         nemoCte = 0.1;
     case 5
+        nemoCte = 0.075;
+    case 6
         nemoCte = 0.05;
+    case 7
+        nemoCte = 0.015; 
 end
-handles.D(positionX:positionX+29,positionY:positionY+29,positionZ-3:positionZ+3)=double(handles.D(positionX:positionX+29,positionY:positionY+29,positionZ-3:positionZ+3)) + nemoCte*handles.nemo(:,:,:);
+handles.D(positionX:positionX+29,positionY:positionY+29,positionZ:positionZ+6)=double(handles.D(positionX:positionX+29,positionY:positionY+29,positionZ:positionZ+6)) + nemoCte*handles.nemo(:,:,:);
+handles.maxD=max(max(max(handles.D)));
+%queremos descobrir a que coordenada pertence a slice com indice positionX
+%é criado o intervalo de fatias onde o nemo pertence
+handles.intervalX = [positionY, positionY+29; 27-(positionZ+6), 27-positionZ];
+handles.intervalY = [positionX, positionX+29; 27-(positionZ+6), 27-positionZ];
+handles.intervalZ = [positionY, positionY+29; positionX, positionX+29];
+guidata(hObject, handles);
+disp(handles.intervalX)
+disp(handles.intervalY)
+disp(handles.intervalZ)
+my_adjust(hObject, handles);
+%Imagem com slice P:
+%eixo xx:M (posX)
+%eixo yy:N (posY)
+%Imagem com slice N: (imrotate90º)
+%eixo xx:M (posX)
+%eixo yy:P (posZ)
+%Imagem com slice M: (imrotate90º)
+%eixo xx:N (posY)
+%eixo yy:P (posZ)
+
+%https://www.mathworks.com/help/matlab/creating_plots/button-down-callback-function.html#buhztrs-16
+function clearNemo(hObject, handles)
+load mri;
+handles.D=squeeze(D);
 handles.maxD=max(max(max(handles.D)));
 guidata(hObject, handles);
 my_adjust(hObject, handles);
-
-%https://www.mathworks.com/help/matlab/creating_plots/button-down-callback-function.html#buhztrs-16
-
 
 
 % --- Executes on button press in pushbutton3.
@@ -466,14 +496,24 @@ function axes1_ButtonDownFcn(hObject, eventdata, handles)
 disp('Coordinates');
 axesHandles  = get(hObject,'Parent');
 coordinate = get(axesHandles,'CurrentPoint');
-disp(coordinate);
+%disp(coordinate);
+handles.Xcoord1=round(coordinate(1,1)*128/300); %(slice N)
+handles.Ycoord1=round(coordinate(1,2)*28/300); %(slice P)
+disp(handles.Xcoord1);
+disp(handles.Ycoord1);
+guidata(hObject, handles);
 
 % --- Executes on mouse press over axes background.
 function axes2_ButtonDownFcn(hObject, eventdata, handles)
 disp('Coordinates');
 axesHandles  = get(hObject,'Parent');
 coordinate = get(axesHandles,'CurrentPoint');
-disp(coordinate);
+%disp(coordinate);
+handles.Xcoord2=round(coordinate(1,1)*128/300); %(slice M)
+handles.Ycoord2=round(coordinate(1,2)*28/300); %(slice P)
+disp(handles.Xcoord2);
+disp(handles.Ycoord2);
+guidata(hObject, handles);
 
 
 % --- Executes on mouse press over axes background.
@@ -481,7 +521,14 @@ function axes3_ButtonDownFcn(hObject, eventdata, handles)
 disp('Coordinates');
 axesHandles  = get(hObject,'Parent');
 coordinate = get(axesHandles,'CurrentPoint');
-disp(coordinate);
+%disp(coordinate);
+%com uma regra de trê simples podemos obter a slice sorrespondente à
+%coordenada pedida
+handles.Xcoord3=round(coordinate(1,1)*128/300); 
+handles.Ycoord3=round(coordinate(1,2)*128/300);
+disp(handles.Xcoord3);
+disp(handles.Ycoord3);
+guidata(hObject, handles);
 
 
 % --- Executes on button press in playButton.
@@ -489,7 +536,47 @@ function playButton_Callback(hObject, eventdata, handles)
 hideNEMO(hObject, handles);
 handles=guidata(hObject);
 
-%DUVIDAS:
-%COMO INTERPRETAR AS COORDENADAS DO CLIQUE
-%COMO METER O NEMO SO NA CABEÇA
 
+% --- Executes on button press in filterOffButton.
+function filterOffButton_Callback(hObject, eventdata, handles)
+handles.laplacianON=false;
+guidata(hObject, handles)
+my_adjust(hObject, handles);
+
+
+% --- Executes on button press in quitButton.
+function quitButton_Callback(hObject, eventdata, handles)
+clearNemo(hObject, handles);
+handles=guidata(hObject);
+handles.laplacianON=false;
+% set(handles.sliderM, 'Value', 50);
+% set(handles.sliderN, 'Value', 50);
+% set(handles.sliderP, 'Value', 10);
+% sliderM_Callback(hObject, eventdata, handles);
+% sliderN_Callback(hObject, eventdata, handles);
+% sliderP_Callback(hObject, eventdata, handles);
+% set(handles.sliderX, 'Value', 35);
+% set(handles.sliderZ, 'Value', 30);
+% sliderX_Callback(hObject, eventdata, handles);
+% sliderZ_Callback(hObject, eventdata, handles);
+guidata(hObject, handles);
+
+
+% --- Executes on selection change in selectLevel.
+function selectLevel_Callback(hObject, eventdata, handles)
+allLevels = get(handles.selectLevel,'string'); %string com todas as opções do popupmenu
+selectedIndex = get(handles.selectLevel,'Value'); %índice seleccionado
+handles.level = str2num(allLevels{selectedIndex}); %gurdar o número do nível, correspondente ao índice do pop up 
+if isnan(handles.level) 
+    %FALTA CODIGO
+end
+guidata(hObject, handles);
+% Hints: contents = cellstr(get(hObject,'String')) returns selectLevel contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from selectLevel
+
+
+% --- Executes during object creation, after setting all properties.
+function selectLevel_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
